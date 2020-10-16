@@ -51,7 +51,7 @@ def sendData(address, port, staNum, data):
 def saveData(filePath, staNum, data):
     try:
         print("Saveing to file...")
-        fileName = filePath + time.strftime("%Y%m%d", time.gmtime()) +"000000_"+ stationName + '_' + str(staNum) + "_data.csv"
+        fileName = filePath + time.strftime("%Y%m%d", time.gmtime()) +"000000_LVLMS_" + str(staNum) + "_data.csv"
 
         with open(fileName, "a") as f:
             now = datetime.datetime.now()
