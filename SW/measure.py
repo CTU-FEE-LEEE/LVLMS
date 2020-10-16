@@ -21,12 +21,12 @@ def getData():
         # print(rr.registers[0])
         msg = "Measured value (ABS) = " + str(rr.registers[0]/100) + " cm"
         print(msg)
-        client.close()        
+        client.close()
         return rr.registers[0]
     except Exception as e:
         print(str(e))
         return -1
-    
+
 def getFakeData():
     print("Measuring fake data...")
     fake = random.randint(-1,10)
@@ -35,32 +35,33 @@ def getFakeData():
 
 def sendData(address, port, staNum, data):
     try:
-        print("Sending data...")        
+        print("Sending data...")
         data = str(staNum) + "," + str(data)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((address, port))
         s.sendall(data.encode("utf-8"))
         s.close()
-                
+
         return 1
-        
+
     except Exception as e:
         print(str(e))
         return -1
-    
-def saveData(fileName, staNum, data):
+
+def saveData(filePath, staNum, data):
     try:
         print("Saveing to file...")
-          
+        fileName = filePath + time.strftime("%Y%m%d", time.gmtime()) +"000000_"+ stationName + '_' + str(staNum) + "_data.csv"
+
         with open(fileName, "a") as f:
             now = datetime.datetime.now()
-            f.write("%d,%s,%d,%0.3f\n" % (time.time(), now.strftime("%Y.%m.%d_%H:%M:%S"), staNum, data))
+            f.write("%d,%s,%d,%0.3f\n" % (time.time(), now.strftime("%Y.%m.%d-%H:%M:%S"), staNum, data))
             f.flush()
             sys.stdout.flush()
-            os.fsync(f.fileno())            
+            os.fsync(f.fileno())
         f.close()
         return 1
-        
+
     except Exception as e:
         print(str(e))
         return -1
@@ -68,14 +69,14 @@ try:
     with open('/home/pi/repos/LVLMS/SW/station.key', 'r') as file: # open and read file with telegram API key
         f = file.read()
     file.close()
-    
+
     address = f.splitlines()[2]
     port = int(f.splitlines()[3])
     staNum = int(f.splitlines()[4]) # station number
     refPoint = int(f.splitlines()[5]) # fixed referenece point in meter a.s.l.
     refDepth = int(f.splitlines()[6]) # referenece depth of sensore relative to refPoint in meter
-    fileName = "/home/pi/MeasuredData/data_" + str(staNum) +".csv"
-    
+    filePath = "/home/pi/MeasuredData/"
+
 except Exception as e:
         print(str(e))
 
@@ -88,7 +89,7 @@ while True:
             if data != -1:
                 break
             time.sleep(5)
-        
+
         ## ABS to m a.s.l.
         if data != -1:
             data = refPoint - refDepth + data/10000
@@ -97,23 +98,21 @@ while True:
         else:
             msg = "Measured value (error) = " + str(data)
             print(msg)
-        
+
         ## Try to send data
         for i in range(20):
             if sendData(address, port, staNum, data) == 1:
                 break
             time.sleep(5)
-        
+
         ## Try to save data
         for i in range(20):
-            if saveData(fileName, staNum, data) == 1:
+            if saveData(filePath, staNum, data) == 1:
                 break
             time.sleep(5)
 
     except Exception as e:
         print(str(e))
-    
+
     print("Going to sleep...")
     time.sleep(30*60)
-    
-
